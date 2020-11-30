@@ -1,0 +1,19 @@
+{
+    "name": "os_rtos",
+    "keywords": "os, rtos",
+    "description": "",
+    "authors": [],
+    "version": "1.0.0",
+    "frameworks": "*",
+    "platforms": "ststm32",
+    "build": {
+        "flags": [
+            "-Wl,--wrap=malloc",
+            "-Wl,--wrap=_malloc_r"
+        ],
+        "extraScript": "tools/pio_build.py"
+    },
+    "dependencies": {
+        "STM32FreeRTOS": "https://github.com/stm32duino/STM32FreeRTOS.git"
+    }
+}
