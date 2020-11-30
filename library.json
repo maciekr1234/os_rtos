@@ -2,14 +2,19 @@
     "name": "os_rtos",
     "keywords": "os, rtos",
     "description": " ",
+    "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/maciekr1234/os_rtos.git"
+  },
     "authors": [],
     "version": "1.0.0",
-    "frameworks": "*",
-    "platforms": "ststm32",
     "build": {
         "extraScript": "tools/pio_build.py"
     },
     "dependencies": {
         "STM32FreeRTOS": "https://github.com/stm32duino/STM32FreeRTOS.git"
-    }
+    },
+    "frameworks": "*",
+    "platforms": "ststm32"
 }
