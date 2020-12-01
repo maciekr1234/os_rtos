@@ -7,10 +7,12 @@
 
 
 namespace os {
+class critical_section;
 /**
  * \addtogroup rtos_api
  * @{
  */
+
 namespace rtos {
 
 /** \defgroup kernel_api RTOS Kernel Api

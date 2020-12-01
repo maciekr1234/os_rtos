@@ -60,8 +60,11 @@ using os_status_t = os::status;
 #endif
 
 #ifndef OS_NO_CMSIS_COMPABILITY
+#ifdef osWaitForever
+#undef osWaitForever
+#endif
 
-#define osWaitForever 0xFFFFFFFFU
+#define osWaitForever 0xFFFFFFFF
 
 #define osOK             os::status::ok
 #define osError          os::status::error
