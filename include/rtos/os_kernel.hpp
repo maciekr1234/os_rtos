@@ -7,7 +7,6 @@
 
 
 namespace os {
-class critical_section;
 /**
  * \addtogroup rtos_api
  * @{
@@ -78,18 +77,7 @@ private:
 } // namespace rtos
 
 ///
-class critical_section : private non_copyable<critical_section>, non_moveable<critical_section> {
-public:
-    critical_section() noexcept;
-    ~critical_section() noexcept;
 
-    static void enable() noexcept {}
-
-    static void disable() noexcept {}
-
-protected:
-    uint32_t m_mask;
-};
 
 /** @} */
 

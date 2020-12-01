@@ -2,6 +2,7 @@
 
 
 #include <rtos/os_kernel.hpp>
+#include <rtos/detail/critical_section.hpp>
 // #include <STM32FreeRTOS.h>
 
 
@@ -10,19 +11,6 @@ extern "C" void     SystemCoreClockUpdate(void); /**< Updates the variable Syste
 
 
 int IS_IRQ(void) { return os::rtos::kernel::is_irq(); }
-
-namespace os
-{
-    critical_section::critical_section() : m_mask() {
-        if (IS_IRQ()) {
-
-        }
-    }
-
-    critical_section::~critical_section() {
-
-    }
-} // namespace os
 
 namespace os::rtos {
 

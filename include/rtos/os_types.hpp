@@ -28,7 +28,7 @@
 namespace os {
 
 
-using lock_flag_t = int32_t;
+using lock_flag_t = uint32_t;
 
 
 enum class status : int32_t {
