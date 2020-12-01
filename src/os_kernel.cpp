@@ -33,9 +33,6 @@ os_status_t kernel::init() {
         }
     }
 
-
-    //
-
     return ret;
 }
 

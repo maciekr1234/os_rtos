@@ -24,5 +24,9 @@ protected:
     ~non_moveable() = default;
 };
 
+template<typename T>
+class disable_copy_move : private non_copyable<T>, private non_moveable<T> {
+
+};
 
 } // namespace os

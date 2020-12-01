@@ -1,5 +1,5 @@
 import os
-from os.path import join, realpath, isdir,isfile
+from os.path import join, realpath, isdir, isfile
 
 env = DefaultEnvironment()
 
@@ -24,24 +24,36 @@ def get_lib_dir(env, lib_name=""):
 def apply_patches():
     STM32DUINO_FREERTOS_DIR = env.get_lib_dir("STM32duino FreeRTOS")
     PATCHES = [
-        (join(STM32DUINO_FREERTOS_DIR,"portable", "MemMang", "heap_useNewlib.c"), "heap_useNewlib.patch")
+        (join(STM32DUINO_FREERTOS_DIR, "portable", "MemMang",
+              "heap_useNewlib.c"), "heap_useNewlib.patch")
     ]
     for patch in PATCHES:
-        if not isinstance(patch,tuple):
+        if not isinstance(patch, tuple):
             continue
 
         if isfile(patch[0]) and isfile(patch[1]):
             env.Execute("patch -s -f \"%s\" %s" % (patch[0], patch[1]))
 
-print ("apply_patches")
+
+print("apply_patches")
 apply_patches()
-
-
 
 
 INCLUDE_DIR = realpath(join("..", "include"))
 RTOS_INCLUDE_DIR = join(INCLUDE_DIR, "rtos")
 
+# """
+#   "-Wl,--wrap=malloc",
+#   "-Wl,--wrap=_malloc_r",
+#   "-Wl,--wrap=realloc",
+#   "-Wl,--wrap=_realloc_r",
+#   "-Wl,--wrap=calloc",
+#   "-Wl,--wrap=_calloc_r",
+#   "-Wl,--wrap=free" ,
+#   "-Wl,--wrap=_free_r",
+# "-Wl,--wrap=pvPortMalloc",
+# "-Wl,--wrap=vPortFree",
+# """
 
 env.Append(
     BUILD_UNFLAGS=[
@@ -58,7 +70,8 @@ env.Append(
     ],
     LINKFLAGS=[
         "-Wl,--wrap=malloc",
-        "-Wl,--wrap=_malloc_r"
+        "-Wl,--wrap=_malloc_r",
+
     ]
 
 )

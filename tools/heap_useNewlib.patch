@@ -50,7 +50,7 @@ index 7c62f5c..0744624 100644
 @@ -48,119 +57,250 @@
   * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   */
- 
+
 +// ================================================================================================
 +// =======================================  Configuration  ========================================
 +// These configuration symbols could be provided by from build...
@@ -69,7 +69,7 @@ index 7c62f5c..0744624 100644
  #include <errno.h>  // ENOMEM
 +#include <stdbool.h>
 +#include <stddef.h>
- 
+
  #include "newlib.h"
 -#if (__NEWLIB__ != 2) || (__NEWLIB_MINOR__ != 5)
 -  #warning "This wrapper was verified for newlib version 2.5.0; please ensure newlib's external requirements for malloc-family are unchanged!"
@@ -77,7 +77,7 @@ index 7c62f5c..0744624 100644
 +	#warning \
 +	  "This wrapper was verified for newlib versions 2.5 - 3.1; please ensure newlib's external requirements for malloc-family are unchanged!"
  #endif
- 
+
  #include "FreeRTOS.h" // defines public interface we're implementing here
 -#if !defined(configUSE_NEWLIB_REENTRANT) ||  (configUSE_NEWLIB_REENTRANT!=1)
 -  #warning "#define configUSE_NEWLIB_REENTRANT 1 // Required for thread-safety of newlib sprintf, strtok, etc..."
@@ -88,12 +88,12 @@ index 7c62f5c..0744624 100644
 +// If you're *REALLY* sure you don't need FreeRTOS's newlib reentrancy support, comment out the above warning...
  #endif
  #include "task.h"
- 
+
 +
  // ================================================================================================
  // External routines required by newlib's malloc (sbrk/_sbrk, __malloc_lock/unlock)
  // ================================================================================================
- 
+
 -#ifndef NDEBUG
 -    static int totalBytesProvidedBySBRK = 0;
 -#endif
@@ -256,7 +256,7 @@ index 7c62f5c..0744624 100644
 +char *_sbrk(int incr) {
 +	return sbrk(incr);
 +};
- 
+
 -#if (__NEWLIB__ >= 3)
 -void __malloc_lock(struct _reent *ptr __attribute__((__unused__)))     {       vTaskSuspendAll(); };
 -void __malloc_unlock(struct _reent *ptr __attribute__((__unused__)))   { (void)xTaskResumeAll();  };
@@ -281,7 +281,7 @@ index 7c62f5c..0744624 100644
 +	(void) xTaskResumeAll();
  #endif
 +};
- 
+
  // newlib also requires implementing locks for the application's environment memory space,
  // accessed by newlib's setenv() and getenv() functions.
  // As these are trivial functions, momentarily suspend task switching (rather than semaphore).
@@ -295,7 +295,7 @@ index 7c62f5c..0744624 100644
 +void __env_unlock() {
 +	(void) xTaskResumeAll();
 +};
- 
+
 +#if 1 // Provide malloc debug and accounting wrappers
  /// /brief  Wrap malloc/malloc_r to help debug who requests memory and why.
 -/// Add to the linker command line: -Xlinker --wrap=malloc -Xlinker --wrap=_malloc_r
@@ -331,11 +331,11 @@ index 7c62f5c..0744624 100644
  };
 -
 +#endif
- 
+
  // ================================================================================================
  // Implement FreeRTOS's memory API using newlib-provided malloc family.
  // ================================================================================================
- 
+
 -void *pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION {
 -    void *p = malloc(xSize);
 -    return p;
@@ -348,7 +348,7 @@ index 7c62f5c..0744624 100644
 +void vPortFree(void *pv) PRIVILEGED_FUNCTION {
 +	free(pv);
  };
- 
+
 -size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION {
 -    struct mallinfo mi = mallinfo();
 -    if (heapBytesRemaining == -1) {
@@ -359,16 +359,16 @@ index 7c62f5c..0744624 100644
 +	struct mallinfo mi = mallinfo();         // available space now managed by newlib
 +	return mi.fordblks + heapBytesRemaining; // plus space not yet handed to newlib by sbrk
  }
- 
+
 -// GetMinimumEverFree is not available in newlib's malloc implementation.
 -// So, no implementation provided: size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 +// GetMinimumEverFree is not available in newlib's xPortGetMinimumEverFreeHeapSizemalloc implementation.
 +// So, no implementation is provided: size_t ( void ) PRIVILEGED_FUNCTION;
- 
+
  //! No implementation needed, but stub provided in case application already calls vPortInitialiseBlocks
 -void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION {};
 +void vPortInitialiseBlocks(void) PRIVILEGED_FUNCTION {};
 +
--- 
+--
 2.29.2.windows.2
 
