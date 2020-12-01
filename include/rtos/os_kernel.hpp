@@ -1,7 +1,7 @@
 #pragma once
 
 #include <rtos/os_types.hpp>
-#include <rtos/detail/os_time.hpp>
+#include <rtos/os_time.hpp>
 
 #include <list>
 

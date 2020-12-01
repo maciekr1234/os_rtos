@@ -10,10 +10,11 @@ namespace os::rtos {
 class critical_section : private non_copyable<critical_section>, non_moveable<critical_section> {
 public:
     critical_section() noexcept : m_flag() {
-        if (IS_IRQ()){
+        if (IS_IRQ()) {
             m_flag = critical_enter_isr();
-        }else{
-            critical_enter();}
+        } else {
+            critical_enter();
+        }
     }
 
     ~critical_section() noexcept {
@@ -25,10 +26,14 @@ public:
     }
 
 private:
-    static void        critical_enter() { return taskENTER_CRITICAL(); }
-    static void        critical_exit() { return taskEXIT_CRITICAL(); }
+    static void critical_enter() { return taskENTER_CRITICAL(); }
+
+    static void critical_exit() { return taskEXIT_CRITICAL(); }
+
     static lock_flag_t critical_enter_isr() { return taskENTER_CRITICAL_FROM_ISR(); }
-    static void        critical_exit_isr(lock_flag_t lock) { taskEXIT_CRITICAL_FROM_ISR(lock); }
+
+    static void critical_exit_isr(lock_flag_t lock) { taskEXIT_CRITICAL_FROM_ISR(lock); }
+
 
 private:
     lock_flag_t m_flag;

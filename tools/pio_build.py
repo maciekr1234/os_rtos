@@ -1,8 +1,19 @@
+import os
+from os.path import join, realpath, isdir,isfile
 
-from os.path import join, realpath
+env = DefaultEnvironment()
 
-Import("env")
-global_env = DefaultEnvironment()
+
+def get_lib_dir(env, lib_name=""):
+    ret = None
+    for src_dir in env.GetLibSourceDirs():
+        if (isdir(src_dir)):
+            for lib in os.listdir(realpath(src_dir)):
+                lib_dir = realpath(join(src_dir, lib))
+                if isdir(lib_dir) and (lib.lower().strip(" ").startswith(lib_name.strip(" ").lower())):
+                    ret = lib_dir
+    return ret
+
 
 # private library flags
 # for item in env.get("CPPDEFINES", []):
@@ -10,14 +21,29 @@ global_env = DefaultEnvironment()
 #         env.Append(CPPPATH=[realpath(join("hal", item[1]))])
 #         env.Replace(SRC_FILTER=["+<*>", "-<hal>", "+<%s>" % join("hal", item[1])])
 #         break
+def apply_patches():
+    STM32DUINO_FREERTOS_DIR = env.get_lib_dir("STM32duino FreeRTOS")
+    PATCHES = [
+        (join(STM32DUINO_FREERTOS_DIR,"portable", "MemMang", "heap_useNewlib.c"), "heap_useNewlib.patch")
+    ]
+    for patch in PATCHES:
+        if not isinstance(patch,tuple):
+            continue
+
+        if isfile(patch[0]) and isfile(patch[1]):
+            env.Execute("patch -s -f \"%s\" %s" % (patch[0], patch[1]))
+
+print ("apply_patches")
+apply_patches()
 
 
-# pass flags to a global build environment (for all libraries, etc)
-INCLUDE_DIR = realpath(join("..","include"))
-SRC_DIR = realpath(join("..","src"))
+
+
+INCLUDE_DIR = realpath(join("..", "include"))
 RTOS_INCLUDE_DIR = join(INCLUDE_DIR, "rtos")
 
-global_env.Append(
+
+env.Append(
     BUILD_UNFLAGS=[
         "-std=gnu++14", "-std=gnu11",
     ],
@@ -31,8 +57,8 @@ global_env.Append(
 
     ],
     LINKFLAGS=[
-            "-Wl,--wrap=malloc",
-            "-Wl,--wrap=_malloc_r"
+        "-Wl,--wrap=malloc",
+        "-Wl,--wrap=_malloc_r"
     ]
 
 )

@@ -1,7 +1,6 @@
 
 #include <os_rtos.hpp>
 #include <Arduino.h>
-
 using namespace os;
 
 extern "C" {
