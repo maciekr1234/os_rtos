@@ -9,9 +9,8 @@ namespace os::rtos {
 
 template <std::ptrdiff_t LeastMaxValue = std::numeric_limits<std::ptrdiff_t>::max()>
 class counting_semaphore {
-    using native_handle = SemaphoreHandle_t;
 public:
-    typedef native_handle* native_handle_type;
+    typedef SemaphoreHandle_t native_handle_type;
 
     constexpr explicit counting_semaphore(std::ptrdiff_t desired) : m_id(0) {
         m_id = xSemaphoreCreateCounting(LeastMaxValue, desired);
@@ -38,21 +37,22 @@ public:
         }
     }
 
-    void acquire() { os_semaphore_acquire(m_id); }
+    void acquire() { os_semaphore_acquire(m_id, kernel::wait_for_u32_forever.count()); }
 
-    bool try_acquire() noexcept {
-        return (os_semaphore_acquire(m_id, 0) == os::status::ok)
-    }
+    bool try_acquire() noexcept { return (os_semaphore_acquire(m_id, 0) == os::status::ok); }
 
     template <class Rep, class Period>
     bool try_acquire_for(const std::chrono::duration<Rep, Period>& rel_time) {
-        return try_acquire_for_usec(std::chrono::duration_cast<std::chrono::microseconds>(rel_time));
+        return os_semaphore_acquire(m_id, detail::convert_duration<kernel::clock::duration_u32>(
+                                              std::chrono::duration_cast<std::chrono::microseconds>(rel_time).count(),
+                                              configTICK_RATE_HZ)
+                                              .count()) == os::status::ok;
     }
 
     template <class Clock, class Duration>
     bool try_acquire_until(const std::chrono::time_point<Clock, Duration>& abs_time) {
-        return try_acquire_for(abs_time - Clock::now());
-        // return try_acquire_until_impl(std::chrono::time_point_cast<kernel::clock::time_point>(abs_time));
+        // return try_acquire_for(abs_time - Clock::now());
+        return try_acquire_until_impl(std::chrono::time_point_cast<kernel::clock::time_point>(abs_time));
     }
 
 
@@ -75,28 +75,27 @@ private:
         }
     }
 
-    bool try_acquire_for_usec(std::chrono::microseconds usec) {
-        // if (usec < std::chrono::microseconds::zero())
-        // throw std::system_error(osErrorParameter, os_category(), "semaphore: negative timer");
+    // bool try_acquire_for_usec(std::chrono::microseconds usec) {
+    // if (usec < std::chrono::microseconds::zero())
+    // throw std::system_error(osErrorParameter, os_category(), "semaphore: negative timer");
 
 
-        auto now = kernel::clock::now();
+    // auto now = kernel::clock::now();
 
-        auto timeout = kernel::convert_duration<kernel::clock::duration_u32>(usec.count(), configTICK_RATE_HZ).count();
+    // auto timeout = detail::convert_duration<kernel::clock::duration_u32>(usec.count(), configTICK_RATE_HZ);
 
-        if (timeout > std::numeric_limits<uint32_t>::max()) {
-            timeout = kernel::wait_for_u32_forever.count();
-        } else if ((usec - now) > kernel::wait_for_u32_max) {
-            timeout = kernel::wait_for_u32_max.count();
-        } else {
-            timeout = (usec - now);
-        }
+    // if (timeout > std::numeric_limits<uint32_t>::max()) {
+    //     timeout = kernel::wait_for_u32_forever;
+    // } else if ((usec - now) > kernel::wait_for_u32_max) {
+    //     timeout = kernel::wait_for_u32_max;
+    // } else {
+    //     timeout = (kernel::clock::time_point(usec) - now);
+    // }
 
-        auto status = os_semaphore_acquire(static_cast<SemaphoreHandle_t>(m_id), timeout);
+    // auto status = os_semaphore_acquire(static_cast<SemaphoreHandle_t>(m_id), timeout);
 
-        return (status == os::status::ok);
-
-    }
+    // return (status == os::status::ok);
+    // }
 
 
 private:

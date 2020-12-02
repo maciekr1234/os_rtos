@@ -18,12 +18,12 @@ namespace detail {
 
 template <mutex_type T>
 class mutex_base : private non_copyable<mutex_base<T>> {
-    typedef SemaphoreHandle_t native_handle_t;
+    // typedef SemaphoreHandle_t native_handle_t;
 
     static constexpr mutex_type type = T;
 
 public:
-    typedef native_handle_t* native_handle_type;
+    typedef SemaphoreHandle_t native_handle_type;
 
     mutex_base() : mutex_base(nullptr) {}
     mutex_base(const char* name);

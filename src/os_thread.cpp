@@ -63,7 +63,7 @@ thread::priority thread::get_priority() const {
 }
 
 thread::state thread::get_state() const {
-    eTaskState    task_state;
+    eTaskState    task_state = eDeleted;
     thread::state result;
     m_mutex.lock();
     if (m_id != nullptr) {
