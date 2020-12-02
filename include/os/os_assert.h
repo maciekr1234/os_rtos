@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-void _os_assert_failed(const char* expr, const char* file, int line) __attribute__((__no_return__));
+void _os_assert_failed(const char* expr, const char* file, int line) __attribute__((__noreturn__));;
 
 #ifdef __cplusplus
 }
@@ -23,7 +23,7 @@ void _os_assert_failed(const char* expr, const char* file, int line) __attribute
 #define OS_ASSERT(expr)                                  \
     do {                                                 \
         if (!(expr)) {                                   \
-            _os_assert_failed(#expr, __FILE__, __LINE__) \
+            _os_assert_failed(#expr, __FILE__, __LINE__); \
         }                                                \
     } while (0)
 

@@ -1,15 +1,14 @@
 #pragma once
+
 #include <rtos/os_types.hpp>
 #include <rtos/os_time.hpp>
 
 #include <list>
 
 extern "C" void os_init(void);
-extern "C" void os_start(void);
 extern "C" void os_rtos_init(void);
-extern "C" __attribute__((__noreturn__)) void  os_rtos_start(void);
-
-
+extern "C" void os_rtos_start(void);
+extern "C" void os_main(void* args);
 
 namespace os {
 /**
@@ -92,9 +91,4 @@ using rtos::kernel;
 } // namespace os
 
 /** @} */
-
-
-#ifndef OS_NO_GLOBAL_TYPES
 using os_kernel_state = ::os::rtos::kernel::state;
-#endif
-

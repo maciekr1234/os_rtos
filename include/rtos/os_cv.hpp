@@ -75,9 +75,8 @@ private:
     cv_status wait_for_usec(std::unique_lock<rtos::mutex>& lock, std::chrono::microseconds usec);
 
 private:
-    rtos::mutex                        m_mutex;
-    std::list<rtos::binary_semaphore*> m_wait;
+    rtos::mutex                                      m_mutex;
+    std::list<rtos::experimental::binary_semaphore*> m_wait;
 };
 
 } // namespace os::rtos
-

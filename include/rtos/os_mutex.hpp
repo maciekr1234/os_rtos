@@ -2,6 +2,7 @@
 
 #include <rtos/os_types.hpp>
 #include <rtos/os_kernel.hpp>
+// #include <rtos/os_thread.hpp>
 
 namespace os::rtos {
 
@@ -38,7 +39,7 @@ public:
 
     void unlock();
 
-    // osThreadId_t get_owner();
+    TaskHandle_t get_owner();
 
     native_handle_type native_handle() noexcept { return m_id; }
 
@@ -62,6 +63,8 @@ public:
     void unlock() { base_type::unlock(); }
 
     bool try_lock() { return base_type::try_lock(); }
+
+    TaskHandle_t get_owner() {return base_type::get_owner();}
 };
 
 class recursive_mutex : private detail::mutex_base<mutex_type::recursive> {
@@ -79,6 +82,7 @@ public:
     void unlock() { base_type::unlock(); }
 
     bool try_lock() { return base_type::try_lock(); }
+    TaskHandle_t get_owner() {return base_type::get_owner();}
 };
 
 class timed_mutex : private detail::mutex_base<mutex_type::timed> {
@@ -101,6 +105,7 @@ public:
     bool try_lock_for(kernel::clock::duration_u32 rel_time) { return base_type::try_lock_for(rel_time); }
 
     bool try_lock_until(kernel::clock::time_point abs_time) { return base_type::try_lock_until(abs_time); }
+    TaskHandle_t get_owner() {return base_type::get_owner();}
 };
 
 class recursive_timed_mutex : private detail::mutex_base<mutex_type::recursive_timed> {
@@ -123,5 +128,6 @@ public:
     bool try_lock_for(kernel::clock::duration_u32 rel_time) { return base_type::try_lock_for(rel_time); }
 
     bool try_lock_until(kernel::clock::time_point abs_time) { return base_type::try_lock_until(abs_time); }
+    TaskHandle_t get_owner() {return base_type::get_owner();}
 };
 } // namespace os::rtos

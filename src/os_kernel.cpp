@@ -1,9 +1,9 @@
 #include <stdlib.h>
 
 
+
 #include <rtos/os_kernel.hpp>
 #include <rtos/detail/critical_section.hpp>
-// #include <STM32FreeRTOS.h>
 
 
 extern "C" uint32_t SystemCoreClock;             /**< System Clock Frequency (Core Clock) */

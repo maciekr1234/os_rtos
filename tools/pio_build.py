@@ -35,8 +35,8 @@ def apply_patches():
             env.Execute("patch -s -f \"%s\" %s" % (patch[0], patch[1]))
 
 
-print("apply_patches")
-apply_patches()
+# print("apply_patches")
+# apply_patches()
 
 
 INCLUDE_DIR = realpath(join("..", "include"))
@@ -57,10 +57,10 @@ RTOS_INCLUDE_DIR = join(INCLUDE_DIR, "rtos")
 
 env.Append(
     BUILD_UNFLAGS=[
-        "-std=gnu++14", "-std=gnu11",
+        # "-std=gnu++14", "-std=gnu11",
     ],
     BUILD_FLAGS=[
-        "-std=gnu++2a", "-std=gnu17",
+        # "-std=gnu++2a", "-std=gnu17",
     ],
     CPPDEFINES=[
 
@@ -69,8 +69,8 @@ env.Append(
 
     ],
     LINKFLAGS=[
-        "-Wl,--wrap=malloc",
-        "-Wl,--wrap=_malloc_r",
+        # "-Wl,--wrap=malloc",
+        # "-Wl,--wrap=_malloc_r",
 
     ]
 

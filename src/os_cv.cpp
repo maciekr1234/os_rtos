@@ -1,6 +1,5 @@
-#include <rtos/os_cv.hpp>
-// #include <rtos/os_semaphore.hpp>
 
+#include <rtos/os_cv.hpp>
 
 namespace os::rtos {
 void condition_variable::notify_one() noexcept {
@@ -25,8 +24,9 @@ rtos::cv_status condition_variable::wait_for_usec(std::unique_lock<rtos::mutex>&
     if (!lock.owns_lock())
         std::terminate();
 
-    rtos::binary_semaphore                       sema(0);
-    std::list<rtos::binary_semaphore*>::iterator it;
+    rtos::experimental::binary_semaphore sema(0);
+
+    std::list<rtos::experimental::binary_semaphore*>::iterator it;
     {
         std::lock_guard<os::rtos::mutex> lg(m_mutex);
         it = m_wait.insert(m_wait.end(), &sema);

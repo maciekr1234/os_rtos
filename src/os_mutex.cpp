@@ -1,8 +1,8 @@
 
-// #include <rtos/os_kernel.hpp>
+#include <rtos/os_kernel.hpp>
 #include <rtos/os_mutex.hpp>
-#include <rtos/detail/os_c_api.h>
 
+#include <rtos/detail/os_c_api.h>
 using namespace std::chrono_literals;
 // using std::milli;
 using std::chrono::duration;
@@ -67,6 +67,15 @@ void mutex_base<T>::unlock() {
         os_mutex_release_recursive(m_id);
     } else {
         os_mutex_release(m_id);
+    }
+}
+
+template <mutex_type T>
+TaskHandle_t mutex_base<T>::get_owner() {
+    if (kernel::is_irq()) {
+        return (TaskHandle_t)xSemaphoreGetMutexHolderFromISR(m_id);
+    } else {
+        return (TaskHandle_t)xSemaphoreGetMutexHolder(m_id);
     }
 }
 
