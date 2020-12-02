@@ -2,7 +2,12 @@
 
 #include <sstream>
 namespace os {
-
+/**
+ * \brief utility to convert os::status code to debug message.
+ *
+ * \param _status os::status value.
+ * \return string message
+ */
 std::string str_status(const status& _status) {
     switch (_status) {
         case os::status::ok:
@@ -24,10 +29,5 @@ std::string str_status(const status& _status) {
     }
 }
 
-std::string str_error(const std::string& fun, const void* id) {
-    std::ostringstream ret;
-    ret << fun << '(' << id << ')';
-    return ret.str();
-}
 
 } // namespace os

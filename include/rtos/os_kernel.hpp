@@ -1,9 +1,14 @@
 #pragma once
-
 #include <rtos/os_types.hpp>
 #include <rtos/os_time.hpp>
 
 #include <list>
+
+extern "C" void os_init(void);
+extern "C" void os_start(void);
+extern "C" void os_rtos_init(void);
+extern "C" __attribute__((__noreturn__)) void  os_rtos_start(void);
+
 
 
 namespace os {
@@ -54,9 +59,9 @@ public:
     static state get_state();
 
 
-    static lock_flag_t lock();
-    static lock_flag_t unlock();
-    static lock_flag_t restore_lock(lock_flag_t lock);
+    static uint32_t lock();
+    static uint32_t unlock();
+    static uint32_t restore_lock(uint32_t lock);
 
     static uint64_t get_tick_count();
 
@@ -92,3 +97,4 @@ using rtos::kernel;
 #ifndef OS_NO_GLOBAL_TYPES
 using os_kernel_state = ::os::rtos::kernel::state;
 #endif
+

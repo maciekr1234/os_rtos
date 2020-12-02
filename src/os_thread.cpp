@@ -8,57 +8,92 @@
 #include <rtos/os_thread.hpp>
 
 #include <utility>
-#include <functional>
-
-// static osThreadId_t os_thread_create(osThreadFunc_t func, void* argument, const os_thread_attr_t* attr) {
-//     osThreadId_t handle;
-
-//     if (xTaskCreate((TaskFunction_t)func, (const portCHAR*)attr->name,
-//                     (attr->stack_size ? attr->stack_size : configMINIMAL_STACK_SIZE), argument,
-//                     (UBaseType_t)attr->priority, &handle) != pdPASS) {
-//         return NULL;
-//     }
-//     return handle;
-// }
 
 
-// namespace os::rtos {
-
-// void thread::constructor(const char* name, osPriority_t priority, uint32_t stack_size, uint32_t attr) {
-//     memset(&m_attr, 0, sizeof(m_attr));
-//     m_attr.name       = name ? name : "unnamed_thread";
-//     m_attr.attr_bits  = attr;
-//     m_attr.stack_size = stack_size;
-//     m_attr.priority   = priority;
+namespace os::rtos {
 
 
-//     if (xTaskCreate((TaskFunction_t)&handler,           /** thread::handler*/
-//                     (const char*)m_attr.name,           /** name */
-//                     (const uint16_t)m_attr.stack_size,  /** stack size */
-//                     this,                               /** argument*/
-//                     (UBaseType_t)m_attr.priority, &m_id /** thread id */
-//                     ) != pdPASS) {                      /**/
+thread::thread(const char* name, thread::priority prio, size_t stack_size)
+    : m_id(0), m_mutex(), m_name(name), m_priority(prio), m_stack_size(stack_size), m_finished(false) {
+    if (xTaskCreate(static_cast<TaskFunction_t>(&handler), m_name, stack_size, this, static_cast<UBaseType_t>(prio),
+                    &m_id) != pdPASS) {
+        m_id = nullptr;
+    }
+}
 
-//         // kernel::set_errno(ENOMEM);
-//         abort();
-//     }
-// }
+thread::~thread() { terminate(); }
 
+os_status_t thread::terminate() {
+    status result = status::ok;
+    m_mutex.lock();
 
-// thread::thread(const char* name, osPriority_t priority, uint32_t stacksize, uint32_t attr) {
-//     constructor(name, priority, stacksize, attr);
-// }
+    auto local_handle = m_id;
+    m_id              = nullptr;
+    if (!m_finished) {
+        m_finished = true;
+        if (local_handle != 0) {
+            vTaskDelete(local_handle);
+        }
+    }
 
-// // thread::thread(const os_thread_attr_t* attr) {
-// //     m_attr = {.name      = attr->name ? attr->name : "default",
-// //               .priority  = attr->priority ? attr->priority : osPriorityNormal,
-// //               .attr_bits = attr->attr_bits ? attr->attr_bits : 0,
-// //               .stacksize = (attr->stacksize && attr->stacksize >= configMINIMAL_STACK_SIZE) ? attr->stacksize
-// //                                                                                             : configMINIMAL_STACK_SIZE};
-// //     m_id   = os_thread_create(&handler, this, &m_attr);
-// // }
+    m_mutex.unlock();
+    return result;
+}
 
-// thread::~thread() { osThreadTerminate(m_id); }
+os_status_t thread::set_priority(thread::priority prio) {
+    m_mutex.lock();
+    vTaskPrioritySet(m_id, (UBaseType_t)prio);
+    m_mutex.unlock();
+    return os::status::ok;
+}
 
+thread::priority thread::get_priority() const {
+    thread::priority result;
 
-// } // namespace os::rtos
+    m_mutex.lock();
+    if (kernel::is_irq()) {
+        result = (priority)uxTaskPriorityGetFromISR(m_id);
+    } else {
+        result = (priority)uxTaskPriorityGet(m_id);
+    }
+
+    m_mutex.unlock();
+
+    return result;
+}
+
+thread::state thread::get_state() const {
+    eTaskState    task_state;
+    thread::state result;
+    m_mutex.lock();
+    if (m_id != nullptr) {
+        task_state = eTaskGetState(m_id);
+    }
+    m_mutex.unlock();
+
+    switch (task_state) {
+        case eRunning:
+            result = state::running;
+            break;
+        case eReady:
+            result = state::ready;
+            break;
+        case eBlocked:
+        case eSuspended:
+            result = state::blocked;
+            break;
+        case eDeleted:
+            result = state::terminated;
+            break;
+        case eInvalid:
+        default:
+            result = state::error;
+            break;
+    };
+
+    return result;
+}
+
+os_thread_id thread::get_id() const { return m_id; }
+
+} // namespace os::rtos

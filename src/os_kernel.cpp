@@ -69,10 +69,10 @@ kernel::state kernel::get_state() {
     return s_state;
 }
 
-lock_flag_t kernel::lock() {
-    lock_flag_t lock;
+uint32_t kernel::lock() {
+    uint32_t lock;
     if (is_irq()) {
-        lock = (lock_flag_t)status::error_isr;
+        lock = (uint32_t)status::error_isr;
     } else {
         switch (xTaskGetSchedulerState()) {
             case taskSCHEDULER_SUSPENDED:
@@ -84,24 +84,24 @@ lock_flag_t kernel::lock() {
                 break;
             case taskSCHEDULER_NOT_STARTED:
             default:
-                lock = (lock_flag_t)status::error;
+                lock = (uint32_t)status::error;
                 break;
         }
     }
     return lock;
 }
 
-lock_flag_t kernel::unlock() {
-    lock_flag_t lock;
+uint32_t kernel::unlock() {
+    uint32_t lock;
     if (is_irq()) {
-        lock = (lock_flag_t)status::error_isr;
+        lock = (uint32_t)status::error_isr;
     } else {
         switch (xTaskGetSchedulerState()) {
             case taskSCHEDULER_SUSPENDED:
                 lock = 1;
                 if (xTaskResumeAll() != pdTRUE) {
                     if (xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED) {
-                        lock = (lock_flag_t)status::error;
+                        lock = (uint32_t)status::error;
                     }
                 }
                 break;
@@ -110,16 +110,16 @@ lock_flag_t kernel::unlock() {
                 break;
             case taskSCHEDULER_NOT_STARTED:
             default:
-                lock = (lock_flag_t)status::error;
+                lock = (uint32_t)status::error;
                 break;
         }
     }
     return lock;
 }
 
-lock_flag_t kernel::restore_lock(lock_flag_t lock) {
+uint32_t kernel::restore_lock(uint32_t lock) {
     if (is_irq()) {
-        lock = (lock_flag_t)status::error_isr;
+        lock = (uint32_t)status::error_isr;
     } else {
         switch (xTaskGetSchedulerState()) {
             case taskSCHEDULER_SUSPENDED:
@@ -129,14 +129,14 @@ lock_flag_t kernel::restore_lock(lock_flag_t lock) {
                 } else {
                     if (xTaskResumeAll() != pdTRUE) {
                         if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
-                            lock = (lock_flag_t)status::error;
+                            lock = (uint32_t)status::error;
                         }
                     }
                 }
                 break;
             case taskSCHEDULER_NOT_STARTED:
             default:
-                lock = (lock_flag_t)status::error;
+                lock = (uint32_t)status::error;
                 break;
         }
     }
@@ -174,7 +174,7 @@ uint64_t kernel::get_tick_count() {
         uint64_t ret;
         {
             critical_section _cs;
-            uint32_t tick32 = get_native_tick_count();
+            uint32_t         tick32 = get_native_tick_count();
             if (tick32 < tick_l) {
                 tick_h++;
             }

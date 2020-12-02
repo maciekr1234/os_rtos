@@ -30,13 +30,13 @@ private:
 
     static void critical_exit() { return taskEXIT_CRITICAL(); }
 
-    static lock_flag_t critical_enter_isr() { return taskENTER_CRITICAL_FROM_ISR(); }
+    static uint32_t critical_enter_isr() { return taskENTER_CRITICAL_FROM_ISR(); }
 
-    static void critical_exit_isr(lock_flag_t lock) { taskEXIT_CRITICAL_FROM_ISR(lock); }
+    static void critical_exit_isr(uint32_t lock) { taskEXIT_CRITICAL_FROM_ISR(lock); }
 
 
 private:
-    lock_flag_t m_flag;
+    uint32_t m_flag;
 };
 
 

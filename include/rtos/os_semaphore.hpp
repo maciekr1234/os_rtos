@@ -1,16 +1,17 @@
 #pragma once
 
 #include <rtos/os_kernel.hpp>
+#include <rtos/detail/os_c_api.h>
 #include <chrono>
 
 
 namespace os::rtos {
 
-
 template <std::ptrdiff_t LeastMaxValue = std::numeric_limits<std::ptrdiff_t>::max()>
 class counting_semaphore {
+    using native_handle = SemaphoreHandle_t;
 public:
-    typedef void* native_handle_type;
+    typedef native_handle* native_handle_type;
 
     constexpr explicit counting_semaphore(std::ptrdiff_t desired) : m_id(0) {
         m_id = xSemaphoreCreateCounting(LeastMaxValue, desired);
@@ -24,14 +25,14 @@ public:
     ~counting_semaphore() noexcept(false) {
         vSemaphoreDelete(m_id);
         // osStatus sta = osSemaphoreDelete((osSemaphoreId)m_id);
-        // if (sta != osOK)
+        // if (sta != os::status::ok)
         // throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreDelete", (osSemaphoreId)m_id));
     }
 
     void release(std::ptrdiff_t update = 1) {
         while (update--) {
             os_status_t status = os_semaphore_release(m_id);
-            if (status != osOK) {
+            if (status != os::status::ok) {
                 // error;
             }
         }
@@ -40,8 +41,7 @@ public:
     void acquire() { os_semaphore_acquire(m_id); }
 
     bool try_acquire() noexcept {
-        return (os_semaphore_acquire(m_id, 0) == (osOK))
-        // return (osSemaphoreWait((osSemaphoreId)m_id, 0) == osOK);
+        return (os_semaphore_acquire(m_id, 0) == os::status::ok)
     }
 
     template <class Rep, class Period>
@@ -86,28 +86,16 @@ private:
 
         if (timeout > std::numeric_limits<uint32_t>::max()) {
             timeout = kernel::wait_for_u32_forever.count();
-        } else if (
-            (usec - now) > kernel::wait_for_u32_max) {
+        } else if ((usec - now) > kernel::wait_for_u32_max) {
             timeout = kernel::wait_for_u32_max.count();
         } else {
             timeout = (usec - now);
         }
 
-        auto status = os_semaphore_acquire(static_cast<SemaphoreHandle_t> (m_id), timeout);
+        auto status = os_semaphore_acquire(static_cast<SemaphoreHandle_t>(m_id), timeout);
 
-        return (status == osOk);
+        return (status == os::status::ok);
 
-        // static_cast<uint32_t>((usec.count() *configper () * std::chrono::microseconds::period::num) /
-        //   std::chrono::microseconds::period::den);
-
-        // if (timeout > std::numeric_limits<uint32_t>::max())
-        //     timeout = osWaitForever;
-
-        // osStatus sta = (osStatus)osSemaphoreWait((osSemaphoreId)m_id, timeout);
-        // // if (sta != osOK && sta != osErrorTimeout)
-        // // throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreWait", (osSemaphoreId)));
-
-        // return (sta == osOK);
     }
 
 
@@ -120,10 +108,10 @@ using binary_semaphore = counting_semaphore<1>;
 } // namespace os::rtos
 
 
-#if !defined(GLIBCXX_HAS_GTHREADS) && !defined(_GLIBCXX_HAS_GTHREADS)
-namespace std {
-template <std::ptrdiff_t LeastMaxValue = std::numeric_limits<std::ptrdiff_t>::max()>
-using counting_semaphore = os::rtos::counting_semaphore<LeastMaxValue>;
-using binary_semaphore   = os::rtos::binary_semaphore;
-} // namespace std
-#endif
+// #if !defined(GLIBCXX_HAS_GTHREADS) && !defined(_GLIBCXX_HAS_GTHREADS)
+// namespace std {
+// template <std::ptrdiff_t LeastMaxValue = std::numeric_limits<std::ptrdiff_t>::max()>
+// using counting_semaphore = os::rtos::counting_semaphore<LeastMaxValue>;
+// using binary_semaphore   = os::rtos::binary_semaphore;
+// } // namespace std
+// #endif

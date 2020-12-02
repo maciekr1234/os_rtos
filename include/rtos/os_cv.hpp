@@ -16,7 +16,7 @@ class condition_variable {
 public:
     typedef void* native_handle_type;
 
-    typedef std::chrono::system_clock clock_t;
+    typedef kernel::clock clock_t;
 
     condition_variable()  = default;
     ~condition_variable() = default;
