@@ -1,4 +1,10 @@
 #pragma once
+
+#include <rtos/memory/rtos_allocator.hpp>
 #include <memory>
 
-#include <rtos/detail/rtos_allocator.hpp>
+namespace os::rtos
+{
+    // std::allocator_traits<os::rtos::memory::rtos_allocator>::
+
+}

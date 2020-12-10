@@ -1,6 +1,10 @@
+#include <rtos/os_kernel.hpp>
+
 #include <rtos/os_semaphore.hpp>
 
+
 using namespace std::chrono_literals;
+using std::chrono::duration;
 
 namespace os::rtos {
 
@@ -20,11 +24,6 @@ semaphore::~semaphore() {
 }
 
 void semaphore::acquire() { try_acquire(portMAX_DELAY); }
-
-bool semaphore::try_acquire_for(kernel::clock::duration_u32 rel_time) {
-    //
-    return try_acquire(rel_time.count());
-}
 
 
 bool semaphore::try_acquire(int32_t timeout) {
@@ -54,14 +53,37 @@ bool semaphore::try_acquire(int32_t timeout) {
     return (status == os::status::ok);
 }
 
+template <class Rep, class Period>
+bool semaphore::try_acquire_for(const std::chrono::duration<Rep, Period>& rel_time) {
+    return try_acquire(convert_duration<kernel_clock::duration_u32>(rel_time.count(), configTICK_RATE_HZ).count());
+}
+
+bool semaphore::try_acquire_for(kernel::clock::duration_u32 rel_time) {
+    //
+    return try_acquire(rel_time.count());
+}
+
+
+template <class Clock, class Duration>
+bool semaphore::try_acquire_until(const std::chrono::time_point<Clock, Duration>& abs_time) {
+    auto now = Clock::now();
+    if (now >= abs_time) {
+        return try_acquire();
+    } else if (abs_time - now > wait_for_u32_max) {
+        return try_acquire_for(wait_for_u32_max);
+    } else {
+        return try_acquire_for(abs_time - now);
+    }
+}
+
+
 bool semaphore::try_acquire_until(kernel::clock::time_point abs_time) {
     auto now = kernel::clock::now();
 
     if (now >= abs_time) {
         return try_acquire();
-    } else if (abs_time - now > kernel::wait_for_u32_max) {
-        // API permits early return
-        return try_acquire_for(kernel::wait_for_u32_max);
+    } else if (abs_time - now > wait_for_u32_max) {
+        return try_acquire_for(wait_for_u32_max);
     } else {
         return try_acquire_for(abs_time - now);
     }
@@ -83,6 +105,7 @@ os_status_t semaphore::release(void) {
     }
     return status;
 }
+
 
 
 } // namespace os::rtos

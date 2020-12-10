@@ -1,8 +1,8 @@
 #include <stdlib.h>
 
-
-
 #include <rtos/os_kernel.hpp>
+#include <rtos/os_time.hpp>
+
 #include <rtos/detail/critical_section.hpp>
 
 
@@ -11,6 +11,8 @@ extern "C" void     SystemCoreClockUpdate(void); /**< Updates the variable Syste
 
 
 int IS_IRQ(void) { return os::rtos::kernel::is_irq(); }
+
+
 
 namespace os::rtos {
 
@@ -25,9 +27,9 @@ os_status_t kernel::init() {
         ret = status::error_isr;
     } else {
         if (get_state() == state::inactive) {
-            set_state(state::ready);
-            ret = status::ok;
+            sKernelState = state::ready;
 
+            ret = status::ok;
         } else {
             ret = status::error;
         }
@@ -42,8 +44,8 @@ os_status_t kernel::start() {
     if (is_irq()) {
         ret = status::error_isr;
     } else {
-        if (get_state() == state::ready) {
-            set_state(state::running);
+        if (sKernelState == state::ready) {
+            sKernelState = (state::running);
             vTaskStartScheduler();
             ret = status::ok;
         } else {
@@ -54,19 +56,24 @@ os_status_t kernel::start() {
 }
 
 kernel::state kernel::get_state() {
+    state _state;
+
     switch (xTaskGetSchedulerState()) {
         case taskSCHEDULER_RUNNING:
-            s_state = state::running;
+            _state = state::running;
             break;
         case taskSCHEDULER_SUSPENDED:
-            s_state = state::locked;
+            _state = state::locked;
             break;
         case taskSCHEDULER_NOT_STARTED:
         default:
-            return state::inactive;
+            _state = state::inactive;
             break;
     }
-    return s_state;
+    if(_state == state::inactive && sKernelState == state::ready) {
+        return state::ready;
+    }
+    return _state;
 }
 
 uint32_t kernel::lock() {
@@ -143,13 +150,7 @@ uint32_t kernel::restore_lock(uint32_t lock) {
     return lock;
 }
 
-bool kernel::is_irq() { return (IS_IRQ_MODE() || (IS_IRQ_MASKED() && get_state() == state::running)); }
-
-void kernel::set_state(kernel::state _state) {
-    if (_state != s_state) {
-        s_state = _state;
-    }
-}
+bool kernel::is_irq() { return (IS_IRQ_MODE() || (IS_IRQ_MASKED() && sKernelState == state::running)); }
 
 /*----------------------------------------------------------------------------
  * tick conversion.
@@ -173,19 +174,26 @@ uint64_t kernel::get_tick_count() {
 
         uint64_t ret;
         {
-            critical_section _cs;
-            uint32_t         tick32 = get_native_tick_count();
-            if (tick32 < tick_l) {
-                tick_h++;
-            }
-            tick_l = tick32;
-            ret    = ((uint64_t)tick_h << 32) | tick_l;
+        critical_section _cs();
 
-            // os_critical_exit();
+        uint32_t tick32 = get_native_tick_count();
+        if (tick32 < tick_l) {
+            tick_h++;
         }
+        tick_l = tick32;
+        ret    = ((uint64_t)tick_h << 32) | tick_l;
+
+        }
+
         return ret;
     }
 }
 
+/*----------------------------------------------------------------------------
+ * kernel::clock::now()
+ *---------------------------------------------------------------------------*/
+kernel_clock::time_point kernel_clock::now() { //
+    return time_point(duration(kernel::get_tick_count()));
+}
 
 } // namespace os::rtos

@@ -3,12 +3,9 @@
 #include <rtos/os_types.hpp>
 #include <rtos/os_time.hpp>
 
+
 #include <list>
 
-extern "C" void os_init(void);
-extern "C" void os_rtos_init(void);
-extern "C" void os_rtos_start(void);
-extern "C" void os_main(void* args);
 
 namespace os {
 /**
@@ -18,24 +15,18 @@ namespace os {
 
 namespace rtos {
 
+
 /** \defgroup kernel_api RTOS Kernel Api
  *  @{
  */
 class kernel : private non_copyable<kernel>, private non_moveable<kernel> {
 public:
-    enum class state : int8_t {
-        inactive  = 0,
-        ready     = 1,
-        running   = 2,
-        locked    = 3,
-        suspended = 4,
-        error     = -1,
-    };
+    using state = os::kernel_state;
+    using clock = kernel_clock;
 
-    using clock = detail::kernel_clock;
-
-    static constexpr clock::duration_u32 wait_for_u32_max{0xFFFFFFFF - 1};
-    static constexpr clock::duration_u32 wait_for_u32_forever{0xFFFFFFFF};
+    static constexpr os::version version = {.major = tskKERNEL_VERSION_MAJOR,
+                                                .minor = tskKERNEL_VERSION_MINOR,
+                                                .patch = tskKERNEL_VERSION_BUILD};
 
 public:
     /**
@@ -66,17 +57,20 @@ public:
 
     static bool is_irq();
 
-    kernel() = delete;
 
 private:
+    kernel() = delete;
+    friend class thread;
+
     static TickType_t get_native_tick_count();
 
-    static void set_state(state _state);
-
 private:
-    static inline state    s_state = state::inactive;
+    static inline state    sKernelState = state::inactive;
     static inline uint32_t s_critical_section_flag;
+
+    // static inline thread_map_t thread_map;
 };
+
 
 } // namespace rtos
 
@@ -91,4 +85,4 @@ using rtos::kernel;
 } // namespace os
 
 /** @} */
-using os_kernel_state = ::os::rtos::kernel::state;
+// using os_kernel_state = ::os::rtos::kernel::state;

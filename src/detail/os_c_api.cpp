@@ -1,6 +1,5 @@
 #include <rtos/detail/os_c_api.h>
 #include <rtos/os_types.hpp>
-
 extern "C" {
 //
 os_status_t os_delay(uint32_t ticks) {
@@ -227,7 +226,7 @@ uint32_t os_thread_flags_wait(uint32_t flags, uint32_t options, uint32_t timeout
     if (IS_IRQ()) {
         rflags = (uint32_t)os::status::error_isr;
     } else {
-        if ((options & osFlagsNoClear) == osFlagsNoClear) {
+        if ((options & os::flags_no_clear) == os::flags_no_clear) {
             clear = 0U;
         } else {
             clear = flags;
@@ -244,7 +243,7 @@ uint32_t os_thread_flags_wait(uint32_t flags, uint32_t options, uint32_t timeout
                 rflags &= flags;
                 rflags |= nval;
 
-                if ((options & osFlagsWaitAll) == osFlagsWaitAll) {
+                if ((options & os::flags_wait_all) == os::flags_wait_all) {
                     if ((flags & rflags) == flags) {
                         break;
                     } else {

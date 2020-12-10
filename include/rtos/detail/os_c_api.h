@@ -11,8 +11,10 @@ os_status_t os_delay_until(uint32_t ticks);
 
 os_status_t os_semaphore_acquire(SemaphoreHandle_t, uint32_t);
 os_status_t os_semaphore_release(SemaphoreHandle_t);
+
 os_status_t os_mutex_acquire(SemaphoreHandle_t, uint32_t);
 os_status_t os_mutex_acquire_recursive(SemaphoreHandle_t, uint32_t);
+
 os_status_t os_mutex_release(SemaphoreHandle_t);
 os_status_t os_mutex_release_recursive(SemaphoreHandle_t);
 

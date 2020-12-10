@@ -2,15 +2,8 @@
 #include <rtos/os_kernel.hpp>
 #include <rtos/os_time.hpp>
 
-namespace os::rtos {
 
-
-kernel::clock::time_point kernel::clock::now() { return time_point(duration(kernel::get_tick_count())); }
-
-
-} // namespace os::rtos
-
-using os::rtos::detail::convert_duration;
+using os::rtos::convert_duration;
 
 #ifdef __cplusplus
 extern "C" {

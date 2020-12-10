@@ -7,7 +7,8 @@
 #include <stdarg.h>
 
 extern "C" {
-void _os_assert_failed(const char* expr, const char* file, int line) {
+void __attribute__((noreturn))
+_os_assert_failed(const char* expr, const char* file, int line) {
     vPortEnterCritical();
     fprintf(stderr, "%s:%d: Assertion '%s' failed!\n",file, line, expr);
     abort();

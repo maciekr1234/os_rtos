@@ -1,133 +1,90 @@
 #pragma once
 
+#include <mutex>
+
 #include <rtos/os_types.hpp>
-#include <rtos/os_kernel.hpp>
-// #include <rtos/os_thread.hpp>
+#include <rtos/os_time.hpp>
+#include <rtos/detail/os_once.hpp>
 
 namespace os::rtos {
 
-enum class mutex_type {
-    none            = 0,
-    standard        = 1,
-    recursive       = 2,
-    timed           = 3,
-    recursive_timed = 2,
-};
-
-namespace detail {
-
-
-template <mutex_type T>
-class mutex_base : private non_copyable<mutex_base<T>> {
-    // typedef SemaphoreHandle_t native_handle_t;
-
-    static constexpr mutex_type type = T;
-
+class mutex : private non_copyable<mutex> {
 public:
-    typedef SemaphoreHandle_t native_handle_type;
+    constexpr mutex(bool recursive = false) noexcept : _mutex(), _is_recursive(recursive), _count(0) { constructor(recursive); }
 
-    mutex_base() : mutex_base(nullptr) {}
-    mutex_base(const char* name);
-    virtual ~mutex_base();
+    ~mutex();
 
     void lock();
+
     bool try_lock();
 
-    bool try_lock_for(kernel::clock::duration_u32 rel_time);
+    bool try_lock_for(kernel_clock::duration_u32 rel_time);
 
-    bool try_lock_until(kernel::clock::time_point abs_time);
+    bool try_lock_until(kernel_clock::time_point abs_time);
 
     void unlock();
 
-    TaskHandle_t get_owner();
-
-    native_handle_type native_handle() noexcept { return m_id; }
+private:
+    SemaphoreHandle_t constructor(bool recursive = false);
 
 private:
-    native_handle_type m_id;
+    SemaphoreHandle_t _mutex;
+
+    bool _is_recursive;
+
+    uint32_t _count;
 };
 
-} // namespace detail
 
-class mutex : private detail::mutex_base<mutex_type::standard> {
-    using base_type = detail::mutex_base<mutex_type::standard>;
+} // namespace os::rtos
 
+
+#if !defined(GLIBCXX_HAS_GTHREADS) && !defined(_GLIBCXX_HAS_GTHREADS)
+namespace std {
+
+class mutex : private os::non_copyable<mutex> {
 public:
-    using base_type::native_handle_type;
+    typedef os::rtos::mutex* native_handle_type;
 
-    mutex() : base_type("mutex") {}
+    constexpr mutex() noexcept
+        : _mutex{false} {
+
+          };
+
     ~mutex() = default;
 
-    void lock() { base_type::lock(); }
+    void lock() { _mutex.lock(); }
 
-    void unlock() { base_type::unlock(); }
+    bool try_lock() noexcept { return _mutex.try_lock(); }
 
-    bool try_lock() { return base_type::try_lock(); }
+    void unlock() noexcept { _mutex.unlock(); }
 
-    TaskHandle_t get_owner() {return base_type::get_owner();}
+
+    native_handle_type native_handle() { return static_cast<native_handle_type>(&_mutex); }
+
+
+private:
+    os::rtos::mutex _mutex{false};
 };
 
-class recursive_mutex : private detail::mutex_base<mutex_type::recursive> {
-    using base_type = detail::mutex_base<mutex_type::recursive>;
-
+class recursive_mutex {
 public:
-    using base_type::native_handle_type;
+    typedef os::rtos::mutex* native_handle_type;
 
-    recursive_mutex() : base_type("recursive_mutex") {}
+    recursive_mutex() : _mutex(true) {}
 
     ~recursive_mutex() = default;
 
-    void lock() { base_type::lock(); }
+    void lock() { _mutex.lock(); }
 
-    void unlock() { base_type::unlock(); }
+    bool try_lock() noexcept { return _mutex.try_lock(); }
 
-    bool try_lock() { return base_type::try_lock(); }
-    TaskHandle_t get_owner() {return base_type::get_owner();}
+    void unlock() noexcept { _mutex.unlock(); }
+
+    native_handle_type native_handle() { return static_cast<native_handle_type>(&_mutex); }
+
+private:
+    os::rtos::mutex _mutex;
 };
-
-class timed_mutex : private detail::mutex_base<mutex_type::timed> {
-    using base_type = detail::mutex_base<mutex_type::timed>;
-
-public:
-    using base_type::native_handle_type;
-
-    timed_mutex() : base_type("timed_mutex") {}
-    ~timed_mutex() = default;
-
-    void lock() { base_type::lock(); }
-
-    void unlock() { base_type::unlock(); }
-
-    bool try_lock() { return base_type::try_lock(); }
-
-    native_handle_type native_handle() noexcept { return base_type::native_handle(); }
-
-    bool try_lock_for(kernel::clock::duration_u32 rel_time) { return base_type::try_lock_for(rel_time); }
-
-    bool try_lock_until(kernel::clock::time_point abs_time) { return base_type::try_lock_until(abs_time); }
-    TaskHandle_t get_owner() {return base_type::get_owner();}
-};
-
-class recursive_timed_mutex : private detail::mutex_base<mutex_type::recursive_timed> {
-    using base_type = detail::mutex_base<mutex_type::recursive_timed>;
-
-public:
-    using base_type::native_handle_type;
-
-    recursive_timed_mutex() : base_type("recursive_timed_mutex") {}
-    ~recursive_timed_mutex() = default;
-
-    void lock() { base_type::lock(); }
-
-    void unlock() { base_type::unlock(); }
-
-    bool try_lock() { return base_type::try_lock(); }
-
-    native_handle_type native_handle() noexcept { return base_type::native_handle(); }
-
-    bool try_lock_for(kernel::clock::duration_u32 rel_time) { return base_type::try_lock_for(rel_time); }
-
-    bool try_lock_until(kernel::clock::time_point abs_time) { return base_type::try_lock_until(abs_time); }
-    TaskHandle_t get_owner() {return base_type::get_owner();}
-};
-} // namespace os::rtos
+} // namespace std
+#endif

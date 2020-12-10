@@ -3,84 +3,74 @@
 #include <rtos/os_mutex.hpp>
 
 #include <rtos/detail/os_c_api.h>
+
 using namespace std::chrono_literals;
-// using std::milli;
 using std::chrono::duration;
 
 namespace os::rtos {
-namespace detail {
 
-template <mutex_type T>
-mutex_base<T>::mutex_base(const char* name) : m_id(0) {
-    if (T == mutex_type::recursive) {
-        m_id = xSemaphoreCreateRecursiveMutex();
+
+SemaphoreHandle_t mutex::constructor(bool recursive) {
+
+    if (recursive) {
+        _mutex = xSemaphoreCreateRecursiveMutex();
     } else {
-        m_id = xSemaphoreCreateMutex();
+        _mutex = xSemaphoreCreateMutex();
+    }
+    return _mutex;
+}
+
+mutex::~mutex() {
+    if (!kernel::is_irq()) {
+        vSemaphoreDelete(_mutex);
     }
 }
 
-template <mutex_type T>
-mutex_base<T>::~mutex_base() {
-    vSemaphoreDelete(m_id);
-}
+void mutex::lock() { try_lock_for(wait_for_u32_forever); }
 
+bool mutex::try_lock() { return try_lock_for(0s); }
 
-template <mutex_type T>
-void mutex_base<T>::lock() {
-    if (T == mutex_type::recursive) {
-        os_mutex_acquire_recursive(m_id, kernel::wait_for_u32_forever.count());
+bool mutex::try_lock_for(kernel::clock::duration_u32 rel_time) {
+    configASSERT(!kernel::is_irq());
+
+    BaseType_t ret;
+
+    if (_is_recursive) {
+        ret = xSemaphoreTakeRecursive(_mutex, static_cast<TickType_t>(rel_time.count()));
     } else {
-        os_mutex_acquire(m_id, kernel::wait_for_u32_forever.count());
+        ret = xSemaphoreTake(_mutex, static_cast<TickType_t>(rel_time.count()));
     }
-}
+    if (ret == pdPASS) {
+        _count++;
 
-template <mutex_type T>
-bool mutex_base<T>::try_lock() {
-    return try_lock_for(0s);
-}
-
-template <mutex_type T>
-bool mutex_base<T>::try_lock_for(kernel::clock::duration_u32 rel_time) {
-    if (T == mutex_type::recursive) {
-        return (os_mutex_acquire_recursive(m_id, rel_time.count()) == os::status::ok);
-    } else {
-        return (os_mutex_acquire(m_id, rel_time.count()) == os::status::ok);
+        return (true);
     }
+    return (false);
 }
 
-template <mutex_type T>
-bool mutex_base<T>::try_lock_until(kernel::clock::time_point abs_time) {
+bool mutex::try_lock_until(kernel::clock::time_point abs_time) {
     auto now = kernel::clock::now();
 
     if (now >= abs_time) {
         return try_lock();
-    } else if (abs_time - now > kernel::wait_for_u32_max) {
-        return try_lock_for(kernel::wait_for_u32_max);
+    } else if (abs_time - now > wait_for_u32_max) {
+        return try_lock_for(wait_for_u32_max);
     } else {
         return try_lock_for(abs_time - now);
     }
 }
 
-template <mutex_type T>
-void mutex_base<T>::unlock() {
-    if (T == mutex_type::recursive) {
-        os_mutex_release_recursive(m_id);
+void mutex::unlock() {
+    configASSERT(!kernel::is_irq());
+
+    _count--;
+
+    if (_is_recursive) {
+        configASSERT(xSemaphoreGiveRecursive(_mutex));
     } else {
-        os_mutex_release(m_id);
+        configASSERT(xSemaphoreGive(_mutex));
     }
 }
-
-template <mutex_type T>
-TaskHandle_t mutex_base<T>::get_owner() {
-    if (kernel::is_irq()) {
-        return (TaskHandle_t)xSemaphoreGetMutexHolderFromISR(m_id);
-    } else {
-        return (TaskHandle_t)xSemaphoreGetMutexHolder(m_id);
-    }
-}
-
-
-} // namespace detail
 
 
 } // namespace os::rtos

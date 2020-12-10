@@ -5,18 +5,21 @@
   "keywords": "os, rtos",
   "authors": [
     {
-      "name":"os_rtos"
+      "name": "os_rtos"
     }
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/maciekr1234/os_rtos.git"
   },
+  "frameworks": "*",
+  "platforms": "ststm32",
   "build": {
+    "srcDir": "src",
+    "srcFilter": [],
     "extraScript": "tools/pio_build.py"
   },
   "dependencies": {
-  },
-  "frameworks": "*",
-  "platforms": "ststm32"
+    "freertos_kernel": "file://tools/freertos_kernel.tar.gz"
+  }
 }
